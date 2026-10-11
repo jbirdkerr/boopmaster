@@ -63,7 +63,7 @@ Served at `metrics-api.jbirdkerr.net`. Endpoints:
 
 Conventions to preserve:
 
-- **Allowed origins** are `https://jbirdkerr.net`, `https://www.jbirdkerr.net`, `https://henry.jbirdkerr.net`, and `https://jbirdkerr.github.io`. Validate `Origin` against this list; never widen it to `*` for the dynamic endpoints.
+- **Allowed origins** are `https://jbirdkerr.net`, `https://www.jbirdkerr.net`, `https://boopmaster.jbirdkerr.net`, and `https://jbirdkerr.github.io`. Validate `Origin` against this list; never widen it to `*` for the dynamic endpoints.
 - **Persistence must not block the proxy response.** Supabase writes happen in `ctx.waitUntil`; the client gets PostHog's response.
 - **Config:** `POSTHOG_PROJECT_ID` and `SUPABASE_URL` are plain vars in `wrangler.toml`. `SUPABASE_SERVICE_ROLE_KEY` is a secret and must only be set through Wrangler.
 - Keep the Worker compatible with Cloudflare's **Python Workers** runtime (check what packages and stdlib features are supported before adding dependencies).
