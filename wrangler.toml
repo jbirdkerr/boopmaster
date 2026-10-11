@@ -1,0 +1,43 @@
+name = "jbirdkerr-metrics"
+account_id = "1dcd86d2743bff3ea34323e58ee7470f"
+workers_dev = true
+compatibility_date = "2026-09-22"  # bumped from 2025-08-14 — verify against latest Cloudflare release notes
+compatibility_flags = ["python_workers", "disable_python_external_sdk"]
+main = "./metrics-worker/worker.py"
+
+[vars]
+POSTHOG_PROJECT_ID = "566829"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MetricsCache"]
+
+[[migrations]]
+tag = "v2"
+deleted_classes = ["MetricsCache"]
+
+# Production environment configuration
+[env.production]
+name = "jbirdkerr-metrics"
+routes = [
+  { pattern = "metrics-api.jbirdkerr.net", custom_domain = true }
+]
+
+[env.production.vars]
+POSTHOG_PROJECT_ID = "566829"
+SUPABASE_URL = "https://tmjvuvyjhweuzgxkqrhg.supabase.co"
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+# Remember: SUPABASE_SERVICE_ROLE_KEY is a secret, not a var — set it per environment:
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
