@@ -117,6 +117,16 @@ class TestMetricsWorker(unittest.TestCase):
         self.assertEqual(
             headers_allowed.get("Access-Control-Allow-Origin"), "https://jbirdkerr.net"
         )
+        headers_boopmaster_https = get_cors_headers("https://boopmaster.jbirdkerr.net")
+        self.assertEqual(
+            headers_boopmaster_https.get("Access-Control-Allow-Origin"),
+            "https://boopmaster.jbirdkerr.net",
+        )
+        headers_boopmaster_http = get_cors_headers("http://boopmaster.jbirdkerr.net")
+        self.assertEqual(
+            headers_boopmaster_http.get("Access-Control-Allow-Origin"),
+            "http://boopmaster.jbirdkerr.net",
+        )
 
         headers_disallowed = get_cors_headers("https://malicious-site.example.com")
         self.assertNotIn("Access-Control-Allow-Origin", headers_disallowed)
@@ -173,6 +183,22 @@ class TestMetricsWorker(unittest.TestCase):
         self.assertIn("50 ms", html)  # 5000 / 100 avg proxy
         self.assertIn("100.0%", html)  # decode success rate
         self.assertIn("Pipeline Health", html)
+        self.assertIn("Blocked Scans / 404s", html)
+
+    def test_render_health_metrics_html_ignores_scan_404s(self):
+        # 800 valid proxy requests and 200 scans; 404 scans shouldn't count toward pipeline error rate.
+        stats_with_scans = {
+            "total_requests": 800,
+            "total_proxy_requests": 800,
+            "total_metrics_requests": 0,
+            "total_health_requests": 0,
+            "total_scans": 200,
+            "total_errors_4xx": 0,
+            "total_errors_5xx": 0,
+        }
+        html = render_health_metrics_html(stats_with_scans)
+        self.assertIn("0.0%", html)
+        self.assertIn("200", html)
 
 
 if __name__ == "__main__":

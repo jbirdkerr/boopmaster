@@ -54,11 +54,23 @@ Liveness probe returning current UTC timestamp.
 
 ---
 
-### 5. `OPTIONS *`
+### 5. `GET /health-metrics`
+Retrieves worker observability stats (`worker_health_stats`) and renders an HTML dashboard fragment for the System Health tab.
+
+- **Response**:
+  - Content-Type: `text/html; charset=utf-8`
+  - Cache-Control: `public, max-age=2, s-maxage=3, stale-while-revalidate=5`
+- **Behavior**:
+  - Separates legitimate service requests (PostHog proxy, dashboard, health probes) from 404 scans/probes.
+  - Excludes automated 404 scans from the pipeline error rate.
+
+---
+
+### 6. `OPTIONS *`
 Dynamic CORS preflight handler.
 
 - **Behavior**:
-  - Validates `Origin` against `ALLOWED_ORIGINS` (`https://jbirdkerr.net`, `https://www.jbirdkerr.net`, `https://boopmaster.jbirdkerr.net`, `https://jbirdkerr.github.io`).
+  - Validates `Origin` against `ALLOWED_ORIGINS` (`https://` and `http://` for `jbirdkerr.net`, `www.jbirdkerr.net`, `boopmaster.jbirdkerr.net`, as well as `https://jbirdkerr.github.io`).
   - Echoes back `Access-Control-Request-Headers` dynamically to avoid preflight header mismatches with PostHog SDK.
 
 ---

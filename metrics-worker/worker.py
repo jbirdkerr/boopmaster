@@ -43,8 +43,11 @@ except ImportError:  # pragma: no cover
 
 ALLOWED_ORIGINS = {
     "https://jbirdkerr.net",
+    "http://jbirdkerr.net",
     "https://www.jbirdkerr.net",
+    "http://www.jbirdkerr.net",
     "https://boopmaster.jbirdkerr.net",
+    "http://boopmaster.jbirdkerr.net",
     "https://jbirdkerr.github.io",
 }
 
@@ -567,6 +570,7 @@ def render_health_metrics_html(stats):
     total_proxy = number(stats.get("total_proxy_requests"))
     total_metrics = number(stats.get("total_metrics_requests"))
     total_health = number(stats.get("total_health_requests"))
+    total_scans = number(stats.get("total_scans"))
     errors_4xx = number(stats.get("total_errors_4xx"))
     errors_5xx = number(stats.get("total_errors_5xx"))
     sb_failures = number(stats.get("total_supabase_write_failures"))
@@ -587,8 +591,19 @@ def render_health_metrics_html(stats):
     cnt_persist_lat = number(stats.get("count_persist_latency"))
     avg_persist_ms = (sum_persist_lat / cnt_persist_lat) if cnt_persist_lat > 0 else 0
 
-    # Error rate
-    error_rate = ((errors_4xx + errors_5xx) / total_requests * 100) if total_requests > 0 else 0
+    # Separate legitimate service requests from 404 vulnerability scans
+    service_requests = total_proxy + total_metrics + total_health
+    # Backward compatibility before DB migration: deduce scans if not yet separated in DB
+    inferred_scans = max(0, total_requests - service_requests)
+    scans = total_scans if total_scans > 0 else inferred_scans
+    # Genuine pipeline 4xx errors (excluding 404 scans)
+    pipeline_4xx = errors_4xx if total_scans > 0 else max(0, errors_4xx - inferred_scans)
+    effective_requests = service_requests if service_requests > 0 else total_requests
+
+    # Error rate (measured on legitimate service requests & genuine pipeline failures)
+    error_rate = (
+        ((pipeline_4xx + errors_5xx) / effective_requests * 100) if effective_requests > 0 else 0
+    )
 
     # Decode success rate
     total_decode = decode_ok + decode_fail
@@ -596,7 +611,7 @@ def render_health_metrics_html(stats):
 
     html = f"""
     <h3>📡 Request Volume</h3>
-    <div class="metric-row"><span class="metric-label">Total Requests</span><span class="metric-value">{fmt(total_requests)}</span></div>
+    <div class="metric-row"><span class="metric-label">Total Requests</span><span class="metric-value">{fmt(effective_requests)}</span></div>
     <div class="feature-grid">
       <div class="feature-box"><div class="feature-name">PostHog Proxy</div><div class="feature-count">{fmt(total_proxy)}</div></div>
       <div class="feature-box"><div class="feature-name">Dashboard</div><div class="feature-count">{fmt(total_metrics)}</div></div>
@@ -609,10 +624,11 @@ def render_health_metrics_html(stats):
     <div class="metric-row"><span class="metric-label">Supabase Persist (bg)</span><span class="metric-value">{avg_persist_ms:.0f} ms</span></div>
     <h3>🛡️ Pipeline Health</h3>
     <div class="metric-row"><span class="metric-label">Payload Decode Success Rate</span><span class="metric-value">{decode_rate:.1f}%</span></div>
-    <div class="metric-row"><span class="metric-label">4xx Errors</span><span class="metric-value">{fmt(errors_4xx)}</span></div>
+    <div class="metric-row"><span class="metric-label">4xx Errors (Pipeline)</span><span class="metric-value">{fmt(pipeline_4xx)}</span></div>
     <div class="metric-row"><span class="metric-label">5xx Errors</span><span class="metric-value">{fmt(errors_5xx)}</span></div>
     <div class="metric-row"><span class="metric-label">Supabase Write Failures</span><span class="metric-value">{fmt(sb_failures)}</span></div>
     <div class="metric-row"><span class="metric-label">PostHog Proxy Failures</span><span class="metric-value">{fmt(ph_failures)}</span></div>
+    <div class="metric-row"><span class="metric-label">Blocked Scans / 404s</span><span class="metric-value">{fmt(scans)}</span></div>
     """
 
     raw_updated_at = stats.get("updated_at") or datetime.now(UTC).isoformat()

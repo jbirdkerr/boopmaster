@@ -1,4 +1,4 @@
-# jbirdkerr.net
+# boopmaster.jbirdkerr.net
 
 Personal interactive website hosted on **GitHub Pages** featuring an interactive canvas, WebAudio synthesis, particle engine, and a real-time event analytics and persistence pipeline powered by **Cloudflare Workers (Python)**, **Supabase (PostgreSQL)**, and **PostHog**.
 

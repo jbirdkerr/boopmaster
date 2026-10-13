@@ -1,4 +1,4 @@
--- jbirdkerr.net realtime metrics
+-- boopmaster.jbirdkerr.net realtime metrics
 --
 -- Run this in the Supabase SQL editor.
 --
